@@ -10,4 +10,4 @@ select yn in "Yes" "No"; do
     esac
 done
 
-appcfg.py update . --oauth2
+appcfg.py update src --oauth2
