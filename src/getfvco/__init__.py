@@ -201,6 +201,7 @@ class PrintFavicon(BaseHandler):
 
     invalidIconReason = []
 
+    inf("Icon: {}, {}, {}".format(iconContentType, iconLength, iconResponse.status_code))
     if not iconResponse.status_code == 200:
       invalidIconReason.append("Status code isn't 200")
 
@@ -317,6 +318,7 @@ class PrintFavicon(BaseHandler):
       rootDomainPageResult = urlfetch.fetch(
         url = self.targetPath,
         follow_redirects = True,
+        headers = {'User-Agent': "Mozilla/5.0 (iPhone; CPU iPhone OS 7_0 like Mac OS X) AppleWebKit/537.51.1 (KHTML, like Gecko) Version/7.0 Mobile/11A465 Safari/9537.53"}
       )
 
     except:
@@ -330,10 +332,15 @@ class PrintFavicon(BaseHandler):
       try:
 
         pageSoup = BeautifulSoup.BeautifulSoup(rootDomainPageResult.content)
-        pageSoupIcon = pageSoup.find("link",rel=re.compile("^(shortcut|icon|shortcut icon)$",re.IGNORECASE))
+        pageSoupIcon = pageSoup.find("link",rel=re.compile(".*(apple-touch-icon).*",re.IGNORECASE))
+        if pageSoupIcon is None:
+          pageSoupIcon = pageSoup.find("link",rel=re.compile("^(shortcut|icon|shortcut icon)$",re.IGNORECASE),type=re.compile("^(image/png|image/gif)$",re.IGNORECASE))
+        if pageSoupIcon is None:
+          pageSoupIcon = pageSoup.find("link",rel=re.compile("^(shortcut|icon|shortcut icon)$",re.IGNORECASE))
 
       except:
-
+        import sys
+        inf(sys.exc_info()[0])
         self.writeDefault()
         return False
 
@@ -391,6 +398,11 @@ class PrintFavicon(BaseHandler):
 
     inf("Caching to %s" % (cacheTo))
 
+    # don't cache for dev server
+    if self.isDev():
+      print "Don't cache for dev server"
+      return
+
     # DS
     if "DS" in cacheTo:
       newFavicon = favIcon(
@@ -432,6 +444,8 @@ class PrintFavicon(BaseHandler):
   def writeDefault(self, fromCache = False):
 
     inf("Writing default")
+
+    self.abort(404)
 
     self.writeHeaders()
 
@@ -488,7 +502,8 @@ class PrintFavicon(BaseHandler):
     # Split path to get domain
     self.targetURL = urlparse(self.targetPath)
     if len(self.targetURL[0]) == 0:
-      self.targetURL = urlparse("http://" + self.targetPath)
+      self.targetPath = "http://" + self.targetPath
+      self.targetURL = urlparse(self.targetPath)
     self.targetDomain = "http://" + self.targetURL[1]
 
     inf("URL is %s" % (self.targetDomain))
