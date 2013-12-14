@@ -308,16 +308,20 @@ class PrintFavicon(BaseHandler):
 
       return False
 
+  def iconInDesktopPage(self):
+    return self.iconInPage(False)
 
-  def iconInPage(self):
+  def iconInPage(self, mobile=True):
 
     inf("iconInPage, trying %s" % self.targetPath)
 
     try:
       opener = urllib2.build_opener()
-      opener.addheaders = [('User-agent', 'Mozilla/5.0 (iPhone; CPU iPhone OS 7_0 like Mac OS X) AppleWebKit/537.51.1 (KHTML, like Gecko) Version/7.0 Mobile/11A465 Safari/9537.53')]
+      if mobile:
+        opener.addheaders = [('User-agent', IPHONE_IOS7)]
+      else:
+        opener.addheaders = [('User-agent', CHROME_MAC)]
       response = opener.open(self.targetPath)
-
     except:
 
       inf("Failed to retrieve page to find icon")
@@ -516,11 +520,13 @@ class PrintFavicon(BaseHandler):
             # Icon specified in page?
             if not self.iconInPage():
 
-              # Icon at [domain]/favicon.ico?
-              if not self.iconAtRoot():
+              # Icon specified in desktop page?
+              if not self.iconInDesktopPage():
 
+                # Icon at [domain]/favicon.ico?
+                if not self.iconAtRoot():
 
-                self.abort(404)
+                  self.abort(404)
 
 
 application = webapp2.WSGIApplication(
