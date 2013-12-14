@@ -504,13 +504,14 @@ class PrintFavicon(BaseHandler):
 
             counter.ChangeCount("cacheNone",1)
 
-            # Icon at [domain]/favicon.ico?
-            if not self.iconAtRoot():
+            # Icon specified in page?
+            if not self.iconInPage():
 
-              # Icon specified in page?
-              if not self.iconInPage():
+              # Icon at [domain]/favicon.ico?
+              if not self.iconAtRoot():
 
-                self.writeDefault()
+
+                self.abort(404)
 
 
 application = webapp2.WSGIApplication(
