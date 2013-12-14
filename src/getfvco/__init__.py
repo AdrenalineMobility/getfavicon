@@ -487,6 +487,8 @@ class PrintFavicon(BaseHandler):
 
     # Split path to get domain
     self.targetURL = urlparse(self.targetPath)
+    if len(self.targetURL[0]) == 0:
+      self.targetURL = urlparse("http://" + self.targetPath)
     self.targetDomain = "http://" + self.targetURL[1]
 
     inf("URL is %s" % (self.targetDomain))
