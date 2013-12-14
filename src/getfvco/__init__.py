@@ -421,7 +421,7 @@ class PrintFavicon(BaseHandler):
   def writeHeaders(self):
 
     # MIME Type
-    self.response.headers['Content-Type'] = "image/x-icon"
+    self.response.headers['Content-Type'] = "image/png"
 
     # CORS
     self.response.headers['Access-Control-Allow-Origin'] = "*"
