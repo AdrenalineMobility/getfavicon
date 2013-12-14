@@ -38,7 +38,7 @@ from models import *
 
 import jinja2
 import webapp2
-import urllib
+import urllib2
 
 JINJA_ENVIRONMENT = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.join(os.path.dirname(__file__), "../templates")),
@@ -314,12 +314,9 @@ class PrintFavicon(BaseHandler):
     inf("iconInPage, trying %s" % self.targetPath)
 
     try:
-
-      rootDomainPageResult = urlfetch.fetch(
-        url = self.targetPath,
-        follow_redirects = True,
-        headers = {'User-Agent': "Mozilla/5.0 (iPhone; CPU iPhone OS 7_0 like Mac OS X) AppleWebKit/537.51.1 (KHTML, like Gecko) Version/7.0 Mobile/11A465 Safari/9537.53"}
-      )
+      opener = urllib2.build_opener()
+      opener.addheaders = [('User-agent', 'Mozilla/5.0 (iPhone; CPU iPhone OS 7_0 like Mac OS X) AppleWebKit/537.51.1 (KHTML, like Gecko) Version/7.0 Mobile/11A465 Safari/9537.53')]
+      response = opener.open(self.targetPath)
 
     except:
 
@@ -327,11 +324,11 @@ class PrintFavicon(BaseHandler):
 
       return False
 
-    if rootDomainPageResult.status_code == 200:
+    if response.getcode() == 200:
 
       try:
 
-        pageSoup = BeautifulSoup.BeautifulSoup(rootDomainPageResult.content)
+        pageSoup = BeautifulSoup.BeautifulSoup(response.read())
         pageSoupIcon = pageSoup.find("link",rel=re.compile(".*(apple-touch-icon).*",re.IGNORECASE))
         if pageSoupIcon is None:
           pageSoupIcon = pageSoup.find("link",rel=re.compile("^(shortcut|icon|shortcut icon)$",re.IGNORECASE),type=re.compile("^(image/png|image/gif)$",re.IGNORECASE))
@@ -339,8 +336,6 @@ class PrintFavicon(BaseHandler):
           pageSoupIcon = pageSoup.find("link",rel=re.compile("^(shortcut|icon|shortcut icon)$",re.IGNORECASE))
 
       except:
-        import sys
-        inf(sys.exc_info()[0])
         self.writeDefault()
         return False
 
@@ -349,8 +344,7 @@ class PrintFavicon(BaseHandler):
         pageIconHref = pageSoupIcon.get("href")
 
         if pageIconHref:
-
-          pageIconPath = urljoin(self.targetPath,pageIconHref)
+          pageIconPath = urljoin(response.geturl(),pageIconHref)
 
         else:
 
