@@ -2,9 +2,9 @@
 
 {% block body %}
 	<p>Retrieves the relevant favicon for a URL, or returns a default icon should it not be able to find it. Works better than the <a href="http://simonwillison.net/2008/Aug/30/favicons/">Google version</a> as it will find favicons specified by an HTML page's <code>&lt;link&gt;</code> element. Feel free to hotlink, although it would be nice if you could <a href="mailto:mail@jasoncartwright.com">email me</a> if you're going to make more than a couple of requests a second.</p>
-	
+
 	<p>getFavicon's source is available at <a href="https://github.com/potatolondon/getfavicon">https://github.com/potatolondon/getfavicon</a></p>
-	
+
 	<h2>Instructions</h2>
 	<p>To retrieve a favicon you can hotlink it at...</p>
 	<pre>http://g.etfv.co/[URL]</pre>
@@ -12,11 +12,11 @@
 	<pre><a href="http://g.etfv.co/http://www.google.com">http://g.etfv.co/http://www.google.com</a></pre>
 	<p>This works well in an <code>&lt;img&gt;</code> tag...</p>
 	<pre>&lt;img src="http://g.etfv.co/http://www.google.com" alt="Google" width="16" height="16" /&gt;</pre>
-	
+
 	<h3>Escaping</h3>
 	<p>Of course, you'll need to escape the URL you want the favicon for. E.g...</p>
 	<pre>http://g.etfv.co/http://www.google.com/search%3Fq%3Durlencode</pre>
-	
+
 	<h3>Default icon</h3>
 	<p>You can specify a default icon to be displayed should the favicon not be found...</p>
 	<pre>http://g.etfv.co/http://www.google.com?defaulticon=http://en.wikipedia.org/favicon.ico</pre>
@@ -27,20 +27,20 @@
 		<li><code>lightpng</code>: grey 'world' icon (as used by Google Chrome)</li>
 		<li><code>bluepng</code>: light blue 'world' icon (as used by Google's favicon service)</li>
 	</ul>
-	
+
 	<h3>HTTPS</h3>
 	<p>You can request an HTTPS version like this...</p>
 	<pre><a href="https://getfavicon.appspot.com/http://www.google.com">https://getfavicon.appspot.com/http://www.google.com</a></pre>
 	<p>Or get the secure icon for a domain like this...</p>
 	<pre><a href="http://g.etfv.co/https://encrypted.google.com">http://g.etfv.co/https://encrypted.google.com</a></pre>
-	
+
 	<h3>Multiple domains</h3>
 	<p>To improve the performance of pages with many favicons on them you can overcome <a href="http://www.stevesouders.com/blog/2008/03/20/roundup-on-parallel-connections/">browser connection limits</a> by pointing to the icon on different domains. You can see this in action on the <a href="/test/">test page</a> (<a href="https://github.com/potatolondon/getfavicon/blob/master/templates/test.html">source</a>) where we use the first letter of the domain to generate a subdomain name. The domains are of the format...</p>
 	<pre>http://[whatever].getfavicon.appspot.com/[URL]</pre>
-	
+
 	<h3>De-cache</h3>
 	<p>You can remove an icon from the cache by calling <code>/decache/?domain=[domain]</code>. E.g. <a href="/decache/?domain=http://www.google.com">/decache/?domain=http://www.google.com</a>.</p>
-	
+
 	<h2>Examples</h2>
 	<ul>
 		<li><a href="/http://code.google.com/appengine/docs/python/urlfetch/fetchfunction.html"><img src="/http://code.google.com/appengine/docs/python/urlfetch/fetchfunction.html" alt="Google Code"/></a> Google Code</li>
@@ -49,7 +49,7 @@
 		<li><a href="https://getfavicon.appspot.com/http://docs.python.org/"><img src="https://getfavicon.appspot.com/http://docs.python.org/" alt="Python Docs"></a> Python Docs (delivered using HTTPS)</li>
 		<li><a href="/http://g.etfv.co"><img src="/http://g.etfv.co" alt="Getting it's own icon" /></a> Getting it's own icon - before some wiseguy suggests it</li>
 	</ul>
-	
+
 	<h3>More examples</h3>
 	<ul class="icons">
 		<li><a href="/http://www.yahoo.com"><img src="/http://www.yahoo.com" alt="Yahoo" /></a></li>
@@ -98,14 +98,14 @@
 		<li><a href="/http://www.newscientist.com"><img src="/http://www.newscientist.com" alt="New Scientist" /></a></li>
 	</ul>
 	<p>1000 more examples on the <a href="/test/">test page</a>.</p>
-	
+
 	<h3>Last cached icons</h3>
 	<ul class="icons">
 		{% for icon in lastServedIcons %}
 		<li><a href="{{ icon.domain|escape }}"><img src="/{{ icon.domain|escape }}" alt="{{ icon.domain|escape }}" /></a></li>
 		{% endfor %}
 	</ul>
-	
+
 	<h2>Stats</h2>
 	<p class="ancillary">Updated every minute or so</p>
 	<dl>
@@ -116,9 +116,11 @@
 		<dt>Cache hit rate</dt>
 		<dd>{{ percentCache }}%</dd>
 		<dt>Unable to find favicon</dt>
-		<dd>{{ percentReal }}%</dd>
+		<dd>{{ error }}</dd>
+        <dt>Error without retry</dt>
+		<dd>{{ percentErrorCache }}%</dd>
 	</dl>
-	
+
 	<h2>Implementations</h2>
 	<ul>
 		<li><a href="http://duckduckgo.com">DuckDuckGo</a></li>
@@ -133,7 +135,7 @@
 		<li><a href="https://chrome.google.com/extensions/detail/jdnejaepfmacfdmhkplckpfdcjgbeode">'Yet Another Google Bookmarks Extension'</a></li>
 		<li><a href="http://ultimatestatusbar.com">Ultimate Status Bar</a> (Safari extension)</li>
 	</ul>
-	
+
 	<h2>Known problems</h2>
 	<ul>
 		<li>Sometimes <a href="http://twitter.com/mydogminton/status/2374789273">doesn't get the correct favicon</a> when there are multiple favicons per domain</li>
@@ -142,10 +144,10 @@
 		<li><s>Client-side caching is rubbish</s></li>
 		<li><s>Some dicey error handling</s></li>
 	</ul>
-	
+
 	<h2>Credit</h2>
 	<p>By <img src="/http://www.jasoncartwright.com"/> <a href="http://www.jasoncartwright.com">Jason</a> from <img src="/http://p.ota.to"/> <a href="http://p.ota.to">Potato</a></p>
-	
+
 	<h3>Built using</h3>
 	<ul>
 		<li><img src="/http://code.google.com"/> <a href="http://code.google.com/appengine/">Google App Engine</a></li>

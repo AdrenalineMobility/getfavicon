@@ -6,6 +6,7 @@ err = logging.error
 cri = logging.critical
 
 SHARDS_PER_COUNTER = 10
+MC_ERROR_CACHE_TIME = 3600 #seconds (1 hour)
 MC_CACHE_TIME = 2419200 #seconds (28 days)
 DS_CACHE_TIME = 90 #days
 
@@ -42,6 +43,8 @@ COUNTERS = [
   "cacheNone",
   "cacheMC",
   "cacheDS",
+  "error",
+  "errorMC",
 ]
 
 IPHONE_IOS7 = "Mozilla/5.0 (iPhone; CPU iPhone OS 7_0 like Mac OS X) AppleWebKit/537.51.1 (KHTML, like Gecko) Version/7.0 Mobile/11A465 Safari/9537.53"

@@ -57,7 +57,6 @@ class BaseHandler(webapp2.RequestHandler):
   def printTemplate(self,templateFile,templateVars):
 
     # Find the full system path
-    print os.path.dirname(__file__)
     template = JINJA_ENVIRONMENT.get_template("%s.html" % (templateFile))
 
     # Write it out
@@ -128,6 +127,8 @@ class IndexPage(BaseHandler):
       favIconsServedDefault = counter.GetCount("favIconsServedDefault")
       iconFromCache = counter.GetCount("cacheMC") + counter.GetCount("cacheDS")
       iconNotFromCache = counter.GetCount("cacheNone")
+      error = counter.GetCount("error")
+      errorCached = counter.GetCount("errorMC")
 
       # Datastore stats
       if stats.GlobalStat.all().get():
@@ -141,15 +142,19 @@ class IndexPage(BaseHandler):
       try:
           percentReal = round(float(favIconsServedDefault) / float(favIconsServed) * 100,2)
           percentCache = round(float(iconFromCache) / float(iconFromCache + iconNotFromCache) * 100,2)
+          percentErrorCache = round(float(errorCached) / float(error) * 100,2)
       except ZeroDivisionError:
           percentReal = 0
           percentCache = 0
+          percentErrorCache = 0
 
       self.printTemplate("index",{
         "isHomepage":True,
         "favIconsServed":favIconsServedM,
         "percentReal":percentReal,
         "percentCache":percentCache,
+        "error":error,
+        "percentErrorCache":percentErrorCache,
         "iconsCached":iconsCachedM,
         "lastServedIcons":lastServedIcons
       })
@@ -232,7 +237,12 @@ class PrintFavicon(BaseHandler):
       counter.ChangeCount("cacheMC",1)
       self.response.headers['X-Cache'] = "Hit from MC"
 
-      if mcIcon == "DEFAULT":
+      if mcIcon == "ERROR":
+        self.error(True)
+
+        return True
+
+      elif mcIcon == "DEFAULT":
 
         self.writeDefault(True)
 
@@ -340,7 +350,7 @@ class PrintFavicon(BaseHandler):
           pageSoupIcon = pageSoup.find("link",rel=re.compile("^(shortcut|icon|shortcut icon)$",re.IGNORECASE))
 
       except:
-        self.writeDefault()
+        self.error()
         return False
 
       if pageSoupIcon:
@@ -398,7 +408,7 @@ class PrintFavicon(BaseHandler):
 
     # don't cache for dev server
     if self.isDev():
-      print "Don't cache for dev server"
+      inf("Don't cache for dev server")
       return
 
     # DS
@@ -437,6 +447,18 @@ class PrintFavicon(BaseHandler):
 
     # Write out icon
     self.response.out.write(self.icon)
+
+  def error(self, fromCache=False):
+    inf("Cache error in memcache")
+
+    if not fromCache:
+      memcache.add("icon-" + self.targetDomain, "ERROR", MC_ERROR_CACHE_TIME)
+    else:
+      counter.ChangeCount("errorMC",1)
+
+    counter.ChangeCount("error",1)
+
+    self.abort(404)
 
 
   def writeDefault(self, fromCache = False):
@@ -526,7 +548,7 @@ class PrintFavicon(BaseHandler):
                 # Icon at [domain]/favicon.ico?
                 if not self.iconAtRoot():
 
-                  self.abort(404)
+                  self.error()
 
 
 application = webapp2.WSGIApplication(
