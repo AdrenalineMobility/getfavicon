@@ -19,12 +19,13 @@
 # don't worry about 2 spaces indention
 # pylint: disable=W0311
 
-import os,re,logging
+import os,re
 
 from google.appengine.api import memcache
 from google.appengine.api import urlfetch
 from google.appengine.ext.db import stats
 from google.appengine.api.labs import taskqueue
+from google.appengine.api import images
 
 from urlparse import urlparse
 from urlparse import urljoin
@@ -32,6 +33,10 @@ from datetime import *
 
 from libs.counter import counter
 from libs.beautifulsoup import BeautifulSoup
+
+from PIL import Image
+from libs import Win32IconImagePlugin
+from StringIO import StringIO
 
 from globals import *
 from models import *
@@ -286,6 +291,21 @@ class PrintFavicon(BaseHandler):
 
     return False
 
+  def usingIcoPlugin(self):
+    imageTypeId = Win32IconImagePlugin.Win32IconImageFile.format.upper()
+    Image.OPEN[imageTypeId] = Win32IconImagePlugin.Win32IconImageFile, Win32IconImagePlugin._accept
+
+  def processIcon(self):
+    self.usingIcoPlugin()
+    ico = Image.open(StringIO(self.icon))
+    if 'sizes' in ico.info:
+      sizes = ico.info['sizes']
+      size = max(sizes)
+      ico.size = size
+    output = StringIO()
+    ico.save(output, "PNG")
+    self.icon = output.getvalue()
+    output.close()
 
   def iconAtRoot(self):
 
@@ -309,6 +329,7 @@ class PrintFavicon(BaseHandler):
     if self.isValidIconResponse(rootDomainFaviconResult):
 
       self.icon = rootDomainFaviconResult.content
+      self.processIcon()
       self.cacheIcon()
       self.writeIcon()
 
@@ -380,6 +401,7 @@ class PrintFavicon(BaseHandler):
         if self.isValidIconResponse(pagePathFaviconResult):
 
           self.icon = pagePathFaviconResult.content
+          self.processIcon()
           self.cacheIcon()
           self.writeIcon()
 
