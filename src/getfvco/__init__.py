@@ -347,7 +347,7 @@ class PrintFavicon(BaseHandler):
     inf("iconInPage, trying %s" % self.targetPath)
 
     try:
-      opener = urllib2.build_opener()
+      opener = urllib2.build_opener(urllib2.HTTPCookieProcessor())
       if mobile:
         opener.addheaders = [('User-agent', IPHONE_IOS7)]
       else:
