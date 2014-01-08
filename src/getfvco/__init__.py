@@ -342,9 +342,7 @@ class PrintFavicon(BaseHandler):
   def iconInDesktopPage(self):
     return self.iconInPage(False)
 
-  def iconInPage(self, mobile=True):
-
-    inf("iconInPage, trying %s" % self.targetPath)
+  def iconInPage(self, mobile=True, url=None):
 
     try:
       opener = urllib2.build_opener(urllib2.HTTPCookieProcessor())
@@ -352,7 +350,12 @@ class PrintFavicon(BaseHandler):
         opener.addheaders = [('User-agent', IPHONE_IOS7)]
       else:
         opener.addheaders = [('User-agent', CHROME_MAC)]
-      response = opener.open(self.targetPath)
+      if url:
+        inf("iconInMobilePage, trying %s" % url)
+        response = opener.open(url)
+      else:
+        inf("iconInPage, trying %s" % self.targetPath)
+        response = opener.open(self.targetPath)
     except:
 
       inf("Failed to retrieve page to find icon")
@@ -560,6 +563,15 @@ class PrintFavicon(BaseHandler):
         if not self.iconInDS():
 
             counter.ChangeCount("cacheNone",1)
+
+            # icon in m. page
+            m_url = self.targetURL[1]
+            if m_url.startswith("www") or len(m_url.split('.')) == 2:
+              if m_url.startswith("www"):
+                m_url = m_url[4:]
+              m_url = "http://m." + m_url
+              if self.iconInPage(True, m_url):
+                return
 
             # Icon specified in page?
             if not self.iconInPage():
