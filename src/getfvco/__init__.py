@@ -307,6 +307,21 @@ class PrintFavicon(BaseHandler):
     self.icon = output.getvalue()
     output.close()
 
+  def fallback(self):
+    rootDomain = self.targetURL[1].split('.')
+    rootDomain = '.'.join(rootDomain[-2:])
+    overridePath = os.path.join(os.path.dirname(__file__), "../overrides/%s.png" % rootDomain)
+
+    if os.path.exists(overridePath):
+      inf("Found override")
+      self.icon = open(overridePath,'r').read()
+      self.writeIcon()
+
+      return True
+
+    return False
+
+
   def iconAtRoot(self):
 
     rootIconPath = self.targetDomain + "/favicon.ico"
@@ -324,7 +339,7 @@ class PrintFavicon(BaseHandler):
 
       inf("Failed to retrieve iconAtRoot")
 
-      return False
+      return self.fallback()
 
     if self.isValidIconResponse(rootDomainFaviconResult):
 
@@ -337,7 +352,7 @@ class PrintFavicon(BaseHandler):
 
     else:
 
-      return False
+      return self.fallback()
 
   def iconInDesktopPage(self):
     return self.iconInPage(False)
@@ -412,10 +427,14 @@ class PrintFavicon(BaseHandler):
 
     return False
 
-
   def iconOverridden(self):
 
-    overridePath = os.path.join(os.path.dirname(__file__), "../overrides/%s.ico" % self.targetURL[1])
+    overridePath = os.path.join(os.path.dirname(__file__), "../overrides/%s.png" % self.targetURL[1])
+
+    if self.targetURL[1].startswith('10') or self.targetURL[1].startswith('192'):
+      if len(self.targetURL[1].split('.')) == 4:
+        overridePath = os.path.join(os.path.dirname(__file__), "../overrides/router.png")
+
 
     if os.path.exists(overridePath):
       inf("Found override")
