@@ -28,6 +28,7 @@ from google.appengine.api.labs import taskqueue
 from google.appengine.api import images
 
 from urlparse import urlparse
+from urlparse import urlunparse
 from urlparse import urljoin
 from datetime import *
 
@@ -415,6 +416,14 @@ class PrintFavicon(BaseHandler):
 
         if pageIconHref:
           pageIconPath = urljoin(response.geturl(),pageIconHref)
+
+          # stupid python urljoin implementation
+          parts = urlparse(pageIconPath)
+          partlist = list(parts)
+          if partlist[2].startswith('/../'):
+            while partlist[2].startswith('/../'):
+              partlist[2] = partlist[2][3:]
+          pageIconPath = urlunparse(tuple(partlist))
 
         else:
 
