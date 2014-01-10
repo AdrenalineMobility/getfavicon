@@ -628,7 +628,6 @@ class customize(BaseHandler):
         domainURL = "http://" + domainURL
       iconURL = str(self.request.get('icon'))
       domain = urlparse(domainURL)[1]
-      print domain, iconURL
       response = urlfetch.fetch(iconURL)
       if self.isValidIconResponse(response):
           icon = response.content
