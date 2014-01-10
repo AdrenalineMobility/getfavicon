@@ -319,6 +319,23 @@ class PrintFavicon(BaseHandler):
 
       return True
 
+    fallbackCacheQuery = fallbackIcon.gql("where domain = :1",self.targetURL[1])
+    fallbackIcons = fallbackCacheQuery.fetch(1)
+    if len(fallbackIcons) > 0:
+      self.icon = fallbackIcons[0].icon
+      self.writeIcon()
+
+      return True
+
+    fallbackCacheQuery = fallbackIcon.gql("where domain = :1",rootDomain)
+    fallbackIcons = fallbackCacheQuery.fetch(1)
+    if len(fallbackIcons) > 0:
+      self.icon = fallbackIcons[0].icon
+      self.writeIcon()
+
+      return True
+
+
     return False
 
 
@@ -603,6 +620,77 @@ class PrintFavicon(BaseHandler):
 
                   self.error()
 
+class customize(BaseHandler):
+  def get(self):
+    try:
+      domainURL = str(self.request.get('url'))
+      if (not domainURL.startswith('http://')) and (not domainURL.startswith('https://')):
+        domainURL = "http://" + domainURL
+      iconURL = str(self.request.get('icon'))
+      domain = urlparse(domainURL)[1]
+      print domain, iconURL
+      response = urlfetch.fetch(iconURL)
+      if self.isValidIconResponse(response):
+          icon = response.content
+          icon = self.processIcon(icon)
+          newIcon = fallbackIcon(
+            domain = domain,
+            icon = icon,
+          )
+          newIcon.put()
+          return self.response.write("<html><body><p>Done</p></body></html>")
+    except:
+      import sys
+      print "Unexpected error:", sys.exc_info()[1]
+      return self.response.write("<html><body><p>Error: " + str(sys.exc_info()[1]) + "</p></body></html>")
+    self.response.write("<html><body><p>Invalid inputs</p></body></html>")
+
+  def usingIcoPlugin(self):
+    imageTypeId = Win32IconImagePlugin.Win32IconImageFile.format.upper()
+    Image.OPEN[imageTypeId] = Win32IconImagePlugin.Win32IconImageFile, Win32IconImagePlugin._accept
+
+  def processIcon(self, icon):
+    self.usingIcoPlugin()
+    ico = Image.open(StringIO(icon))
+    if 'sizes' in ico.info:
+      sizes = ico.info['sizes']
+      size = max(sizes)
+      ico.size = size
+    output = StringIO()
+    ico.save(output, "PNG")
+    ico = output.getvalue()
+    output.close()
+    return ico
+
+  def isValidIconResponse(self,iconResponse):
+
+    iconLength = len(iconResponse.content)
+
+    iconContentType = iconResponse.headers.get("Content-Type")
+    if iconContentType:
+      iconContentType = iconContentType.split(";")[0]
+
+    invalidIconReason = []
+
+    inf("Icon: {}, {}, {}".format(iconContentType, iconLength, iconResponse.status_code))
+    if not iconResponse.status_code == 200:
+      invalidIconReason.append("Status code isn't 200")
+
+    if iconContentType in ICON_MIMETYPE_BLACKLIST:
+      invalidIconReason.append("Content-Type in ICON_MIMETYPE_BLACKLIST")
+
+    if iconLength < MIN_ICON_LENGTH:
+      invalidIconReason.append("Length below MIN_ICON_LENGTH")
+
+    if iconLength > MAX_ICON_LENGTH:
+      invalidIconReason.append("Length greater than MAX_ICON_LENGTH")
+
+    if len(invalidIconReason) > 0:
+      inf("Invalid icon because: %s" % invalidIconReason)
+      return False
+    else:
+      return True
+
 
 application = webapp2.WSGIApplication(
   [
@@ -612,6 +700,7 @@ application = webapp2.WSGIApplication(
     ('/_cleanup', cleanup),
     ('/_doCleanup', doCleanup),
     ('/_deleteall', deleteAll),
+    ('/_fallback', customize),
     ('/.*', PrintFavicon),
   ],
   debug=True
