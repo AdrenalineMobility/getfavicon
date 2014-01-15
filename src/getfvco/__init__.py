@@ -469,6 +469,16 @@ class PrintFavicon(BaseHandler):
 
       return True
 
+    if self.targetURL[1].startswith('www') and len(self.targetURL[1].split('.')) == 3:
+      overridePath = os.path.join(os.path.dirname(__file__), "../overrides/%s.png" % self.targetURL[1][4:])
+      inf(overridePath)
+      if os.path.exists(overridePath):
+        inf("Found override")
+        self.icon = open(overridePath,'r').read()
+        self.writeIcon()
+
+        return True
+
     return False
 
 
